@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "793947592819-ekl81572309vegju4bj9fkpvofsghop1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pondthaitay.fcm_example",
+            "certificate_hash": "175b00aa8beab0fc3644e3b0ea603920dd05d5cf"
+          }
+        },
+        {
           "client_id": "793947592819-u95cl7neukkhth25i0ij6qh96msj93c0.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,8 +37,13 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "793947592819-u95cl7neukkhth25i0ij6qh96msj93c0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
           "status": 2
