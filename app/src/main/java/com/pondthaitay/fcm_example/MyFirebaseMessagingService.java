@@ -63,10 +63,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         //if (remoteMessage.getData().size() > 0) {
         //scheduleJob();
         //}
+
+        // for Notification messages and Data messages (Optional)
         handleNow(notification, data);
 
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
+        // for Data Messages only
+//        if (data.size() > 0) {
+//            handleNow(null, data);
+//        }
     }
     // [END receive_message]
 
@@ -109,6 +113,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
      * @param data FCM message body received.
      */
     private void sendNotification(RemoteMessage.Notification notification, Map<String, String> data) throws IOException {
+        String title;
+        String body;
+        if (notification != null) {
+            title = notification.getTitle();
+            body = notification.getBody();
+        } else {
+            title = data.get("title");
+            body = data.get("body");
+        }
+
         Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 
         Intent intent = new Intent(this, MainActivity.class);
@@ -116,12 +130,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT);
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setContentTitle(notification.getTitle())
-                .setContentText(notification.getBody())
+                .setContentTitle(title)
+                .setContentText(body)
                 .setAutoCancel(true)
                 .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
                 .setContentIntent(pendingIntent)
-                .setContentInfo(notification.getTitle())
                 .setLargeIcon(icon)
                 .setColor(Color.RED)
                 .setSmallIcon(R.mipmap.ic_launcher);
@@ -131,7 +144,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             URL url = new URL(image_url);
             Bitmap bigPicture = BitmapFactory.decodeStream(url.openConnection().getInputStream());
             notificationBuilder.setStyle(
-                    new NotificationCompat.BigPictureStyle().bigPicture(bigPicture).setSummaryText(notification.getBody())
+                    new NotificationCompat.BigPictureStyle().bigPicture(bigPicture).setSummaryText(body)
             );
         }
 
