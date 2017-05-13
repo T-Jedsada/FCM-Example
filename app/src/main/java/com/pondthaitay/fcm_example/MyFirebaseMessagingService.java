@@ -99,7 +99,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         try {
             sendNotification(notification, data);
         } catch (IOException e) {
-            Log.e(MyFirebaseMessagingService.class.getName(), String.valueOf(e));
+            Log.e(TAG, String.valueOf(e));
         }
     }
 
