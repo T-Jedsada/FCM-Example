@@ -1,11 +1,14 @@
 package com.pondthaitay.fcm_example;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.media.RingtoneManager;
-import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -18,6 +21,10 @@ import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Map;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -45,24 +52,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: " + remoteMessage.getFrom());
 
+        RemoteMessage.Notification notification = remoteMessage.getNotification();
+        Map<String, String> data = remoteMessage.getData();
+
+        /*
+          Check if data needs to be processed by long running job
+          For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
+         */
         // Check if message contains a data payload.
-        if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
-
-            /*
-              Check if data needs to be processed by long running job
-              For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
-             */
-
-            //scheduleJob();
-            handleNow();
-        }
-
-        // Check if message contains a notification payload.
-        if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
-            handleNow();
-        }
+        //if (remoteMessage.getData().size() > 0) {
+        //scheduleJob();
+        //}
+        handleNow(notification, data);
 
         // Also if you intend on generating your own notifications as a result of a received FCM
         // message, here is where that should be initiated. See sendNotification method below.
@@ -89,35 +90,55 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     /**
      * Handle time allotted to BroadcastReceivers.
+     *
+     * @param notification
+     * @param data
      */
-    private void handleNow() {
+    private void handleNow(RemoteMessage.Notification notification, Map<String, String> data) {
         Log.d(TAG, "Short lived task is done.");
-        sendNotification("OK");
+        try {
+            sendNotification(notification, data);
+        } catch (IOException e) {
+            Log.e(MyFirebaseMessagingService.class.getName(), String.valueOf(e));
+        }
     }
 
     /**
      * Create and show a simple notification containing the received FCM message.
      *
-     * @param messageBody FCM message body received.
+     * @param data FCM message body received.
      */
-    private void sendNotification(String messageBody) {
+    private void sendNotification(RemoteMessage.Notification notification, Map<String, String> data) throws IOException {
+        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT);
 
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("FCM Message")
-                .setContentText(messageBody)
+                .setContentTitle(notification.getTitle())
+                .setContentText(notification.getBody())
                 .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent);
+                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                .setContentIntent(pendingIntent)
+                .setContentInfo(notification.getTitle())
+                .setLargeIcon(icon)
+                .setColor(Color.RED)
+                .setSmallIcon(R.mipmap.ic_launcher);
 
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        String image_url = data.get("image_url");
+        if (image_url != null && image_url.length() != 0) {
+            URL url = new URL(image_url);
+            Bitmap bigPicture = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+            notificationBuilder.setStyle(
+                    new NotificationCompat.BigPictureStyle().bigPicture(bigPicture).setSummaryText(notification.getBody())
+            );
+        }
 
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+        notificationBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
+        notificationBuilder.setLights(Color.BLUE, 1000, 300);
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(0, notificationBuilder.build());
     }
 }
